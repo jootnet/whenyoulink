@@ -1,0 +1,111 @@
+<html window-frame="extended"
+      window-resizable="false"
+      window-maximizable="false"
+      window-width="210px"
+      window-height="297px">
+  <head>
+    <meta charset="utf-8">
+    <style>
+      html {
+          margin: 0px;
+          padding: 0px;
+      }
+      body {
+          width: 1*;
+          height: 1*;
+          margin: 0px;
+          padding: 0px;
+      }
+      icon {
+          margin-top: 14px;
+          display: inline-block;
+          size: 11px;
+          background-size: contain;
+          background-repeat: no-repeat;
+          fill: #363636;
+          stroke: none;
+      }
+      icon.minimize {
+          margin-top: 18px;
+          background-image: url(path:M44.521739 472.731826h934.956522v93.495652H44.521739z);
+      }
+      icon.close {
+          fill: #363636;
+          background-image: url(path:M582.95652219 508.95304344l367.3043475 364.71652219-67.82608688 64.36173843-367.30434844-364.71652125L141.56521719 950.26086969 73.73913031 879.59652219l373.89913032-376.86260906-367.72173844-364.63304344L147.82608687 73.73913031l367.30434751 364.75826063L882.43478281 73.73913031 950.26086969 144.19478281z);
+      }
+      icon.close.hover {
+          fill: #fff;
+      }
+      .hide {
+          display: none;
+      }
+      .titleBar {
+          height: 38px;
+          line-height: 38px;
+          background: #eee;
+          display: flex;
+          font-size: 13px;
+          color: #333;
+          flow: horizontal;
+      }
+      .caption {
+          width: 1*;
+          padding-left:8px;
+      }
+      .captionTool {
+          width: 92px;
+          text-align: center;
+          flow: horizontal;
+      }
+      .captionTool div {
+          width: 1*;
+          height: 38px;
+          line-height: 38px;
+      }
+      .captionTool div:hover {
+          background: #ccc;
+      	cursor: pointer;
+      }
+      .captionTool div:last-child:hover {
+          background: rgb(231, 37, 54);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="titleBar">
+      <div class="caption" role="window-caption">温油轻远程</div>
+      <div class="captionTool">
+        <div id="minimizeBtn">
+          <icon class="minimize"></icon>
+        </div>
+        <div id="closeBtn">
+          <icon class="close"></icon>
+        </div>
+      </div>
+    </div>
+    <script>
+      const closeBtn = document.querySelector("#closeBtn");
+      const minimizeBtn = document.querySelector("#minimizeBtn");
+      closeBtn.addEventListener("mouseenter", () => {
+          closeBtn.firstElementChild.classList.add("hover");
+      })
+      closeBtn.addEventListener("mouseleave", () => {
+          closeBtn.firstElementChild.classList.remove("hover");
+      })
+      closeBtn.addEventListener("click", () => {
+          Window.this.close(true);
+      })
+      minimizeBtn.addEventListener("click", () => {
+          Window.this.state = Window.WINDOW_HIDDEN;
+		  Window.this.trayIcon({text:'温油轻远程'});
+      })
+      Window.this.on('trayiconclick', function(evt) {
+        if (evt.detail.buttons == 1)
+        {
+          Window.this.trayIcon("remove");
+          Window.this.state = Window.WINDOW_SHOWN;
+        }
+      });
+    </script>
+  </body>
+</html>
