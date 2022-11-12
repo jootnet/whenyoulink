@@ -1,5 +1,6 @@
 
 #include <thread>
+#include <sstream>
 
 #include "sciter-x.h"
 #include "sciter-x-window.hpp"
@@ -11,27 +12,27 @@ static sciter::om::hasset<sciter::window> pwin;
 class Webrtc : public sciter::om::asset<Webrtc> {
 public:
 	Webrtc(sciter::string peer_id) {
-		client_ = wrdCreateMaster();
+		client_ = ::wrdCreateMaster();
+		::wrdOnCandidateGathering(client_, OnCandidateGathering, this);
+		::wrdOnRemoteStringReceived(client_, OnRemoteStringReceive, this);
 		peer_id_ = peer_id;
 	}
 	~Webrtc() {
-		wrdOnCandidateGathering(client_, OnCandidateGathering, this);
-		wrdOnRemoteStringReceived(client_, OnRemoteStringReceive, this);
-		wrdClientDestroy(&client_);
+		::wrdClientDestroy(&client_);
 	}
 
 	bool genSDP() {
-		wrdGenSDP(client_, OnSDPGen, this);
+		::wrdGenSDP(client_, OnSDPGen, this);
 		return true;
 	}
 
 	bool setRemoteSDP(sciter::string sdp) {
-		wrdSetRemoteSDP(client_, aux::w2a(sdp));
+		::wrdSetRemoteSDP(client_, aux::w2a(sdp));
 		return true;
 	}
 
 	bool addRemoteCandidate(sciter::string mid, int mline_idx, sciter::string sdp) {
-		wrdAddRemoteCandidate(client_, aux::w2a(mid), mline_idx, aux::w2a(sdp));
+		::wrdAddRemoteCandidate(client_, aux::w2a(mid), mline_idx, aux::w2a(sdp));
 		return true;
 	}
 
@@ -42,6 +43,7 @@ public:
 			SOM_PROP_EX(onmessage, remoteStringReceivedCb_)
 		)
 		SOM_FUNCS(
+			SOM_FUNC(genSDP),
 			SOM_FUNC(setRemoteSDP),
 			SOM_FUNC(addRemoteCandidate)
 		)
@@ -50,43 +52,39 @@ public:
 private:
 	sciter::string peer_id_;
 	WRDClient client_;
-	sciter::string sdpGenCb_;
-	sciter::string candidateGatheringCb_;
-	sciter::string remoteStringReceivedCb_;
+	std::string sdpGenCb_;
+	std::string candidateGatheringCb_;
+	std::string remoteStringReceivedCb_;
 private:
 	static void OnSDPGen(const WRDClient client, const char* sdp, void* usr_param) {
 		auto webrtc = reinterpret_cast<Webrtc*>(usr_param);
 		if (!webrtc->sdpGenCb_.empty()) {
-			pwin->call_function(aux::w2a(webrtc->sdpGenCb_), webrtc->peer_id_, sdp);
+			pwin->call_function(webrtc->sdpGenCb_.c_str(), webrtc->peer_id_, sdp);
 		}
 	}
 	static void OnCandidateGathering(const WRDClient client, const char* mid, int mline_index, const char* candidate, void* usr_param) {
 		auto webrtc = reinterpret_cast<Webrtc*>(usr_param);
 		if (!webrtc->candidateGatheringCb_.empty()) {
-			pwin->call_function(aux::w2a(webrtc->candidateGatheringCb_), webrtc->peer_id_, mid, mline_index, candidate);
+			pwin->call_function(webrtc->candidateGatheringCb_.c_str(), webrtc->peer_id_, mid, mline_index, candidate);
 		}
 	}
 	static void OnRemoteStringReceive(const WRDClient client, const char* data, void* usr_param) {
 		auto webrtc = reinterpret_cast<Webrtc*>(usr_param);
 		if (!webrtc->remoteStringReceivedCb_.empty()) {
-			pwin->call_function(aux::w2a(webrtc->remoteStringReceivedCb_), webrtc->peer_id_, data);
+			pwin->call_function(webrtc->remoteStringReceivedCb_.c_str(), webrtc->peer_id_, data);
 		}
 	}
 };
 
-class frame : public sciter::window {
+class WebrtcFactory : public sciter::om::asset<WebrtcFactory> {
 public:
-	frame() : window(SW_TOOL | SW_MAIN) {
-
-	}
-
 	sciter::value wrdCreateMaster(sciter::string peer_id) {
 		return sciter::value::wrap_asset(new Webrtc(peer_id));
 	}
 
-	SOM_PASSPORT_BEGIN(frame)
+	SOM_PASSPORT_BEGIN(WebrtcFactory)
 		SOM_FUNCS(
-			SOM_FUNC(wrdCreateMaster)
+			SOM_FUNC_EX(newMaster, wrdCreateMaster)
 		)
 		SOM_PASSPORT_END
 };
@@ -94,10 +92,11 @@ public:
 #include "resources.cpp"
 
 int uimain(std::function<int()> run) {
+	::SciterSetGlobalAsset(new WebrtcFactory);
 
 	sciter::archive::instance().open(aux::elements_of(resources));
 
-	pwin = new frame();
+	pwin = new sciter::window(SW_TOOL | SW_MAIN);
 
 	pwin->load(WSTR("this://app/main.htm"));
 

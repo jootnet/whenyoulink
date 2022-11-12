@@ -75,37 +75,43 @@
     <div class="titleBar">
       <div class="caption" role="window-caption">温油轻远程</div>
       <div class="captionTool">
-        <div id="minimizeBtn">
+        <div #minimizeBtn>
           <icon class="minimize"></icon>
         </div>
-        <div id="closeBtn">
+        <div #closeBtn>
           <icon class="close"></icon>
         </div>
       </div>
     </div>
     <script>
-      const closeBtn = document.querySelector("#closeBtn");
-      const minimizeBtn = document.querySelector("#minimizeBtn");
-      closeBtn.addEventListener("mouseenter", () => {
-          closeBtn.firstElementChild.classList.add("hover");
+	  const window = Window.this;
+      const closeBtn = document.querySelector("#closeBtn")
+      const minimizeBtn = document.querySelector("#minimizeBtn")
+
+      closeBtn.on("mouseenter", () => {
+          closeBtn.firstElementChild.classList.add("hover")
       })
-      closeBtn.addEventListener("mouseleave", () => {
-          closeBtn.firstElementChild.classList.remove("hover");
+      closeBtn.on("mouseleave", () => {
+          closeBtn.firstElementChild.classList.remove("hover")
       })
-      closeBtn.addEventListener("click", () => {
-          Window.this.close(true);
+      closeBtn.on("click", () => {
+          window.close(true)
       })
-      minimizeBtn.addEventListener("click", () => {
-          Window.this.state = Window.WINDOW_HIDDEN;
-		  Window.this.trayIcon({text:'温油轻远程'});
+
+      minimizeBtn.on("click", () => {
+		Graphics.Image.load('this://app/whenyoulink.ico').then((img) => {
+			window.state = Window.WINDOW_HIDDEN
+			window.trayIcon({image:img, text:'温油轻远程'})
+		})
       })
-      Window.this.on('trayiconclick', function(evt) {
+      window.on('trayiconclick', (evt) => {
         if (evt.detail.buttons == 1)
         {
-          Window.this.trayIcon("remove");
-          Window.this.state = Window.WINDOW_SHOWN;
+          window.trayIcon("remove")
+          window.state = Window.WINDOW_SHOWN
         }
-      });
+      })
+	  
     </script>
   </body>
 </html>
