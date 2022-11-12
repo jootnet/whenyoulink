@@ -83,27 +83,30 @@
         </div>
       </div>
     </div>
-    <script>
-	  const window = Window.this;
-      const closeBtn = document.querySelector("#closeBtn")
-      const minimizeBtn = document.querySelector("#minimizeBtn")
+    <script type="module">
+	  import { $, on } from "@sciter";
 
-      closeBtn.on("mouseenter", () => {
+	  const window = Window.this;
+	  const closeBtn = $('#closeBtn')
+	  const minimizeBtn = $('#minimizeBtn')
+
+	  closeBtn.on('mouseenter', () => {
           closeBtn.firstElementChild.classList.add("hover")
       })
-      closeBtn.on("mouseleave", () => {
+	  closeBtn.on('mouseleave', () => {
           closeBtn.firstElementChild.classList.remove("hover")
       })
-      closeBtn.on("click", () => {
+	  on('click', '#closeBtn', () => {
           window.close(true)
       })
 
-      minimizeBtn.on("click", () => {
+	  on('click', '#minimizeBtn', () => {
 		Graphics.Image.load('this://app/whenyoulink.ico').then((img) => {
 			window.state = Window.WINDOW_HIDDEN
 			window.trayIcon({image:img, text:'温油轻远程'})
 		})
       })
+
       window.on('trayiconclick', (evt) => {
         if (evt.detail.buttons == 1)
         {
