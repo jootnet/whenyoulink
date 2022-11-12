@@ -36,9 +36,6 @@
       icon.close.hover {
           fill: #fff;
       }
-      .hide {
-          display: none;
-      }
       .titleBar {
           height: 38px;
           line-height: 38px;
@@ -97,7 +94,10 @@
           closeBtn.firstElementChild.classList.remove("hover")
       })
 	  on('click', '#closeBtn', () => {
-          window.close(true)
+          if (window.modal({url: 'this://app/closing.htm', type: Window.DIALOG_WINDOW}))
+          {
+			  window.close(true)
+          }
       })
 
 	  on('click', '#minimizeBtn', () => {

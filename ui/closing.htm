@@ -1,0 +1,154 @@
+<html window-frame="extended"
+	  window-resizable="false"
+	  window-maximizable="false"
+	  window-width="400px"
+	  window-height="200px">
+  <head>
+    <meta charset="utf-8">
+	<style>
+	  html {
+		margin: 0px;
+		padding: 0px;
+	  }
+	  body {
+		width: 1*;
+		height: 1*;
+		margin: 0px;
+		padding: 0px;
+		border-bottom: 1px solid #DADADA;
+	  }
+	  icon {
+		margin-top: 12px;
+		display: inline-block;
+		size: 11px;
+		background-size: contain;
+		background-repeat: no-repeat;
+		fill: #7D7D7D;
+		stroke: none;
+	  }
+	  icon.close {
+		background-image: url(path:M582.95652219 508.95304344l367.3043475 364.71652219-67.82608688 64.36173843-367.30434844-364.71652125L141.56521719 950.26086969 73.73913031 879.59652219l373.89913032-376.86260906-367.72173844-364.63304344L147.82608687 73.73913031l367.30434751 364.75826063L882.43478281 73.73913031 950.26086969 144.19478281z);
+	  }
+	  icon.close.hover {
+		fill: #fff;
+	  }
+	  .titleBar {
+		height: 32px;
+		line-height: 32px;
+		display: flex;
+		font-size: 13px;
+		color: #9A9A9A;
+		flow: horizontal;
+		border-bottom: 1px solid #F5F5F5;
+	  }
+	  .caption {
+		width: 1*;
+		padding-left:8px;
+	  }
+	  .captionTool {
+		width: 46px;
+		text-align: center;
+		flow: horizontal;
+	  }
+	  .captionTool div {
+		width: 1*;
+		height: 32px;
+		line-height: 32px;
+	  }
+	  .captionTool div:hover {
+		cursor: pointer;
+	  }
+	  .captionTool div:last-child:hover {
+		background: rgb(231, 37, 54);
+	  }
+	  .tiLine1 {
+	    text-align: center;
+		font-size: 13px;
+		color: #333333;
+		margin-top: 28px;
+	  }
+	  .tiLine2 {
+	    text-align: center;
+		font-size: 13px;
+		color: #9A9A9A;
+		margin-top: 12px;
+	  }
+	  #okBtn {
+	    margin-top: 20px;
+		margin-left: 70px;
+		width: 120px;
+		height: 32px;
+		line-height: 32px;
+		font-size: 13px;
+		color: #fff;
+		text-align: center;
+		background: #0078D7;
+		cursor: pointer;
+		display: inline-block;
+	  }
+	  #cancelBtn {
+	    margin-top: 20px;
+		margin-left: 20px;
+		width: 120px;
+		height: 32px;
+		line-height: 32px;
+		font-size: 13px;
+		color: #0078D7;
+		text-align: center;
+		border: 1px solid #0078D7;
+		cursor: pointer;
+		display: inline-block;
+	  }
+	</style>
+  </head>
+  <body>
+    <div class="titleBar">
+      <div class="caption" role="window-caption">退出客户端</div>
+      <div class="captionTool">
+        <div #closeBtn>
+          <icon class="close"></icon>
+        </div>
+      </div>
+    </div>
+	<p class="tiLine1">确定要退出轻远程客户端吗？</p>
+	<p class="tiLine2">确定退出后，将无法远程控制此计算机</p>
+	<div #okBtn>确定</div>
+	<div #cancelBtn>取消</div>
+
+    <script type="module">
+	  import { $, on } from "@sciter";
+
+	  const window = Window.this;
+	  const closeBtn = $('#closeBtn')
+	  const okBtn = $('#okBtn')
+	  const cancelBtn = $('#cancelBtn')
+
+	  closeBtn.on('mouseenter', () => {
+          closeBtn.firstElementChild.classList.add('hover')
+      })
+	  closeBtn.on('mouseleave', () => {
+          closeBtn.firstElementChild.classList.remove('hover')
+      })
+	  on('click', '#closeBtn', () => {
+          window.close(false)
+      })
+
+	  cancelBtn.on('mouseenter', () => {
+          cancelBtn.style.setProperty('background', '#0078D7')
+          cancelBtn.style.setProperty('color', '#fff')
+      })
+	  cancelBtn.on('mouseleave', () => {
+          cancelBtn.style.setProperty('background', 'transparent')
+          cancelBtn.style.setProperty('color', '#0078D7')
+      })
+
+	  on('click', '#okBtn', () => {
+          window.close(true)
+      })
+
+	  on('click', '#cancelBtn', () => {
+          window.close(false)
+      })
+	</script>
+  </body>
+</html>
