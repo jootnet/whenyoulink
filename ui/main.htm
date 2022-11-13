@@ -2,7 +2,8 @@
       window-resizable="false"
       window-maximizable="false"
       window-width="210px"
-      window-height="297px">
+      window-height="297px"
+	  window-icon="whenyoulink.ico">
   <head>
     <meta charset="utf-8">
     <style>
@@ -66,24 +67,157 @@
       .captionTool div:last-child:hover {
           background: rgb(231, 37, 54);
       }
+	  .tiId {
+		font-size: 13px;
+		color: #9A9A9A;
+		margin-top: 28px;
+		margin-left: 12px;
+	  }
+	  .idLbl {
+		font-size: 20px;
+		color: #333333;
+		position: absolute;
+		left: 12px;
+		top: 92px;
+	  }
+	  #idEditBtn {
+	    background: url(pencil-square.svg) no-repeat;
+	    fill: #9A9A9A;
+        size: 18px;
+        background-size: 14px;
+        background-repeat: no-repeat;
+		background-position: left top;
+		cursor: pointer;
+		display: inline-block;
+	  }
+	  #idTxt {
+		font-size: 20px;
+		color: #333333;
+		position: absolute;
+		left: 12px;
+		top: 86px;
+		border: 1px solid #0078D7;
+		width: 160px;
+		visibility: hidden;
+	  }
+	  .tiPsw {
+		font-size: 13px;
+		color: #9A9A9A;
+		margin-top: 48px;
+		margin-left: 12px;
+	  }
+	  .pswLbl {
+		font-size: 13px;
+		color: #333333;
+		position: absolute;
+		left: 12px;
+		top: 152px;
+	  }
+	  #pswEditBtn {
+	    background: url(pencil-square.svg) no-repeat;
+	    fill: #9A9A9A;
+        size: 12px;
+        background-size: contain;
+        background-repeat: no-repeat;
+		cursor: pointer;
+		display: inline-block;
+	  }
+	  #pswTxt {
+		font-size: 13px;
+		color: #333333;
+		position: absolute;
+		left: 12px;
+		top: 150px;
+		border: 1px solid #0078D7;
+		width: 100px;
+		visibility: hidden;
+	  }
+	  #tiNotice {
+	    font-size: 12px;
+		color: #9A9A9A;
+	    margin-top: 48px;
+		margin-left: 12px;
+		line-height: 18px;
+	  }
+	  .statusBar {
+	  	position: absolute;
+		bottom: 0;
+		height: 36px;
+		background: #FAFAFA;
+		width: 100%;
+		padding-left: 12px;
+		color: #6A6A6A;
+		font-size: 13px;
+		line-height: 36px;
+	  }
+	  #stausIcon {
+		border-radius: 50%;
+	    fill: #9A9A9A;
+        size: 12px;
+		display: inline-block;
+	  }
+	  #stausIcon.faild {
+	    background: red;
+	  }
+	  #stausIcon.success {
+	    background: green;
+	  }
     </style>
   </head>
   <body>
-    <div class="titleBar">
-      <div class="caption" role="window-caption">温油轻远程</div>
-      <div class="captionTool">
-        <div #minimizeBtn>
-          <icon class="minimize"></icon>
+    <div.titleBar>
+      <div.caption role="window-caption">温油轻远程</div>
+      <div.captionTool>
+        <div#minimizeBtn>
+          <icon.minimize></icon>
         </div>
-        <div #closeBtn>
-          <icon class="close"></icon>
+        <div#closeBtn>
+          <icon.close></icon>
         </div>
       </div>
     </div>
-    <script type="module">
-	  import { $, on } from "@sciter";
+	<div.tiId>为远程连接设置识别码</div>
+	<div.idLbl>
+	  <label></label>
+	  <i#idEditBtn tooltip="识别码最长11位，仅支持大小写字母和数字组合"></i>
+	</div>
+	<input#idTxt></input>
+	<div.tiPsw>验证码</div>
+	<div.pswLbl>
+	  <label></label>
+	  <i#pswEditBtn tooltip="验证码最长8位，仅支持大小写字母和数字组合"></i>
+	</div>
+	<input#pswTxt></input>
+	<p#tiNotice>(永)不收费无广告，不设注册、会员<br>完整开源，参见<a href="https://www.cnblogs.com/johness/category/2239671.html" target="@system">温油轻远程</a>系列文章<br>请各路高手手下留情</p>
+	<div.statusBar><i#stausIcon.faild></i> <label#statusLbl>未能与服务器建立连接</label></div>
+	<script>
+	  /*const window = Window.this
+	  function wsonopen() {
+		  globalThis.websocket.send(':mid:linxing')
+	  }
+	  function wsonmessage(evt) {
+		  const message = JSON.parse(evt.data)
+		  if (Object.prototype.hasOwnProperty.call(message, 'type'))
+		  {
+		  }
+		  else if (message.code == 0)
+		  {
+		    window.modal(<info>登录成功</info>)
+		  }
+		  else {
+		    window.modal(<info>{message.msg}</info>)
+		  }
+	  }
 
-	  const window = Window.this;
+	  globalThis.websocket = new WebSocket('ws://8.130.41.127/wrd/room')
+	  globalThis.websocket.onopen = globalThis.wsonopen
+	  globalThis.websocket.onmessage = globalThis.wsonmessage*/
+	</script>
+    <script|module>
+	  import * as sys from "@sys";
+	  import { $, on, uuid, encode, decode } from "@sciter";
+
+	  const window = Window.this
 	  const closeBtn = $('#closeBtn')
 	  const minimizeBtn = $('#minimizeBtn')
 
@@ -94,14 +228,14 @@
           closeBtn.firstElementChild.classList.remove("hover")
       })
 	  on('click', '#closeBtn', () => {
-          if (window.modal({url: 'this://app/closing.htm', type: Window.DIALOG_WINDOW}))
+          if (window.modal({url: 'closing.htm', type: Window.DIALOG_WINDOW}))
           {
 			  window.close(true)
           }
       })
 
 	  on('click', '#minimizeBtn', () => {
-		Graphics.Image.load('this://app/whenyoulink.ico').then((img) => {
+		Graphics.Image.load('whenyoulink.ico').then((img) => {
 			window.state = Window.WINDOW_HIDDEN
 			window.trayIcon({image:img, text:'温油轻远程'})
 		})
@@ -115,6 +249,146 @@
         }
       })
 	  
+	  
+	  const idLbl = $('.idLbl')
+	  const idEditBtn = $('#idEditBtn')
+	  const idTxt = $('#idTxt')
+	  globalThis.setId = function(id) {
+		if (id == globalThis.mid)
+		{
+			return
+		}
+		globalThis.mid = id
+		idTxt.value = globalThis.mid
+		let showId = ''
+		let reverseId = ''
+		for (let i = id.length - 1, spIdx = 1; i >= 0; --i, ++spIdx)
+		{
+		  reverseId += id.charAt(i)
+		  if (spIdx % 3 == 0)
+		  {
+			  reverseId += ' '
+		  }
+		}
+		for (let i = reverseId.length - 1; i >= 0; --i)
+		{
+		  showId += reverseId.charAt(i)
+		}
+		idLbl.firstElementChild.innerText = showId.trim()
+	  }
+
+	  on('click', '#idEditBtn', () => {
+		idTxt.style['visibility'] = 'visible'
+		idLbl.style['visibility'] = 'hidden'
+		idTxt.focus()
+	  })
+
+	  idTxt.on('blur', () => {
+		if (idTxt.value.trim())
+		{
+		  const newId = idTxt.value.trim()
+		  const re = /^[A-z0-9]{1,11}$/;
+		  if (!re.test(newId))
+		  {
+			  return
+		  }
+		  globalThis.setId(newId)
+		  idTxt.style['visibility'] = 'hidden'
+		  idLbl.style['visibility'] = 'visible'
+		}
+	  })
+
+	  const pswLbl = $('.pswLbl')
+	  const pswEditBtn = $('#pswEditBtn')
+	  const pswTxt = $('#pswTxt')
+	  globalThis.setPsw = function(psw) {
+		if (psw == globalThis.psw)
+		{
+			return
+		}
+		globalThis.psw = psw
+		pswLbl.firstElementChild.innerText = psw
+		pswTxt.value = globalThis.psw
+	  }
+
+	  on('click', '#pswEditBtn', () => {
+		pswTxt.style['visibility'] = 'visible'
+		pswLbl.style['visibility'] = 'hidden'
+		pswTxt.focus()
+	  })
+
+	  pswTxt.on('blur', () => {
+		if (pswTxt.value.trim())
+		{
+		  const newPsw = pswTxt.value.trim()
+		  const re = /^[A-z0-9]{1,8}$/;
+		  if (!re.test(newPsw))
+		  {
+			  return
+		  }
+		  globalThis.setPsw(newPsw)
+		  pswTxt.style['visibility'] = 'hidden'
+		  pswLbl.style['visibility'] = 'visible'
+		}
+	  })
+
+	  const confDir = sys.homedir() + '/.whenyoulink'
+	  const confFile = sys.homedir() + '/.whenyoulink/config.json'
+	  document.on("ready", () => {
+		let conf = null
+
+		const dirStat = sys.fs.statSync(confDir)
+		if (dirStat == null)
+		{
+		  sys.fs.mkdirSync(confDir)
+		}
+		const fileStat = sys.fs.statSync(confFile)
+		if (fileStat != null) {
+		  const text = decode(sys.fs.readFileSync(confFile), "utf-8")
+		  const reId = /^[A-z0-9]{1,11}$/
+		  const rePsw = /^[A-z0-9]{1,8}$/
+		  try {
+		    conf = JSON.parse(text)
+		  } catch(err) {}
+		  if (conf == null)
+		  {
+		    sys.fs.unlink(confFile)
+		  }
+		  else if (!Object.prototype.hasOwnProperty.call(conf, 'mid') || !Object.prototype.hasOwnProperty.call(conf, 'psw'))
+		  {
+		    conf = null
+		    sys.fs.unlink(confFile)
+		  }
+		  else if (!reId.test(conf.mid) || !rePsw.test(conf.psw)) 
+		  {
+		    conf = null
+		    sys.fs.unlink(confFile)
+		  }
+		}
+		if (conf == null)
+		{
+		  const randomId = uuid()
+	      let realId = ''
+		  for (let i = 0; i < randomId.length; i += 3)
+		  {
+		    realId += randomId.charAt(i)
+		  }
+	      globalThis.setId(realId)
+
+	      globalThis.setPsw(Math.round(Math.random() * 1e6)+'')
+
+		  sys.fs.sync.open(confFile, 'w').writeSync(JSON.stringify({'mid':globalThis.mid,'psw':globalThis.psw}))
+		}
+		else
+		{
+	      globalThis.setId(conf.mid)
+
+	      globalThis.setPsw(conf.psw)
+		}
+	  })
+	  document.on("beforeunload", () => {
+		sys.fs.sync.open(confFile, 'w').writeSync(JSON.stringify({'mid':globalThis.mid,'psw':globalThis.psw}))
+	  })
     </script>
   </body>
 </html>

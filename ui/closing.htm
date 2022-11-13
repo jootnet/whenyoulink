@@ -102,20 +102,20 @@
 	</style>
   </head>
   <body>
-    <div class="titleBar">
-      <div class="caption" role="window-caption">退出客户端</div>
-      <div class="captionTool">
-        <div #closeBtn>
-          <icon class="close"></icon>
+    <div.titleBar>
+      <div.caption role="window-caption">退出客户端</div>
+      <div.captionTool>
+        <div#closeBtn>
+          <icon.close></icon>
         </div>
       </div>
     </div>
-	<p class="tiLine1">确定要退出轻远程客户端吗？</p>
-	<p class="tiLine2">确定退出后，将无法远程控制此计算机</p>
-	<div #okBtn>确定</div>
-	<div #cancelBtn>取消</div>
+	<p.tiLine1>确定要退出轻远程客户端吗？</p>
+	<p.tiLine2>确定退出后，将无法远程控制此计算机</p>
+	<div#okBtn>确定</div>
+	<div#cancelBtn>取消</div>
 
-    <script type="module">
+    <script|module>
 	  import { $, on } from "@sciter";
 
 	  const window = Window.this;
@@ -134,12 +134,12 @@
       })
 
 	  cancelBtn.on('mouseenter', () => {
-          cancelBtn.style.setProperty('background', '#0078D7')
-          cancelBtn.style.setProperty('color', '#fff')
+          cancelBtn.style['background'] = '#0078D7'
+          cancelBtn.style['color'], '#fff'
       })
 	  cancelBtn.on('mouseleave', () => {
-          cancelBtn.style.setProperty('background', 'transparent')
-          cancelBtn.style.setProperty('color', '#0078D7')
+          cancelBtn.style['background'] = 'transparent'
+          cancelBtn.style['color'] = '#0078D7'
       })
 
 	  on('click', '#okBtn', () => {
