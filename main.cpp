@@ -93,6 +93,11 @@ public:
 
 int uimain(std::function<int()> run) {
 	::SciterSetGlobalAsset(new WebrtcFactory);
+	::SciterSetOption(NULL, SCITER_SET_SCRIPT_RUNTIME_FEATURES,
+		ALLOW_FILE_IO |
+		ALLOW_SOCKET_IO |
+		ALLOW_EVAL |
+		ALLOW_SYSINFO);
 
 	sciter::archive::instance().open(aux::elements_of(resources));
 

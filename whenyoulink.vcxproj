@@ -76,11 +76,25 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>sciter-js-sdk-5.0.1.3\include;wrd;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>wrd;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>wrd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <Manifest>
+      <EnableDpiAwareness>PerMonitorHighDPIAware</EnableDpiAwareness>
+    </Manifest>
+    <PreBuildEvent>
+      <Command>sciter-js-sdk-5.0.1.3\bin\windows\packfolder.exe ui resources.cpp -v "resources"</Command>
+    </PreBuildEvent>
+    <PostBuildEvent>
+      <Command>copy wrd\wrd.dll $(OutDir)
+copy sciter-js-sdk-5.0.1.3\bin\windows\x32\sciter.dll $(OutDir)
+editbin /subsystem:console $(OutDir)$(TargetName).exe</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -90,7 +104,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)sciter-js-sdk-5.0.1.3\include;$(ProjectDir)wrd;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>sciter-js-sdk-5.0.1.3\include;wrd;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -98,18 +112,18 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)wrd;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>wrd;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>wrd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Manifest>
       <EnableDpiAwareness>PerMonitorHighDPIAware</EnableDpiAwareness>
     </Manifest>
     <PreBuildEvent>
-      <Command>$(ProjectDir)sciter-js-sdk-5.0.1.3\bin\windows\packfolder.exe $(ProjectDir)ui $(ProjectDir)resources.cpp -v "resources"</Command>
+      <Command>sciter-js-sdk-5.0.1.3\bin\windows\packfolder.exe ui resources.cpp -v "resources"</Command>
     </PreBuildEvent>
     <PostBuildEvent>
-      <Command>copy $(ProjectDir)wrd\wrd.dll $(OutDir)
-copy $(ProjectDir)sciter-js-sdk-5.0.1.3\bin\windows\x32\sciter.dll $(OutDir)</Command>
+      <Command>copy wrd\wrd.dll $(OutDir)
+copy sciter-js-sdk-5.0.1.3\bin\windows\x32\sciter.dll $(OutDir)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
