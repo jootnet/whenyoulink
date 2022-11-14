@@ -214,8 +214,8 @@
 	  globalThis.websocket.onmessage = globalThis.wsonmessage*/
 	</script>
     <script|module>
-	  import * as sys from "@sys";
 	  import { $, on, uuid, encode, decode } from "@sciter";
+	  import * as sys from "@sys";
 
 	  const window = Window.this
 	  const closeBtn = $('#closeBtn')
@@ -377,7 +377,7 @@
 
 	      globalThis.setPsw(Math.round(Math.random() * 1e6)+'')
 
-		  sys.fs.sync.open(confFile, 'w').writeSync(JSON.stringify({'mid':globalThis.mid,'psw':globalThis.psw}))
+		  sys.fs.sync.open(confFile, 'w').writeSync(encode(JSON.stringify({'mid':globalThis.mid,'psw':globalThis.psw}), 'utf-8'))
 		}
 		else
 		{
@@ -387,7 +387,7 @@
 		}
 	  })
 	  document.on("beforeunload", () => {
-		sys.fs.sync.open(confFile, 'w').writeSync(JSON.stringify({'mid':globalThis.mid,'psw':globalThis.psw}))
+		sys.fs.sync.open(confFile, 'w').writeSync(encode(JSON.stringify({'mid':globalThis.mid,'psw':globalThis.psw}), 'utf-8'))
 	  })
     </script>
   </body>
