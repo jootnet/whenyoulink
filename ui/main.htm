@@ -198,13 +198,35 @@
 	  const statusLbl = $('#statusLbl')
 	  const stausIcon = $('#stausIcon')
 	  
+	  globalThis.chlWindows = {}
+	  globalThis.onsdp = function(peerId, sdpStr) {
+		let sendMsg = {peer_id: peerId, type: 'sdp', sdp: sdpStr}
+		globalThis.websocket.send(JSON.stringify(sendMsg))
+	  }
+	  globalThis.oncandidate = function(peerId, mIdStr, mline_index_I, candidateStr) {
+		let sendMsg = {peer_id: peerId, type: 'candidate', mid: mIdStr, mline_index: mline_index_I, candidate: candidateStr}
+		globalThis.websocket.send(JSON.stringify(sendMsg))
+	  }
 	  globalThis.wsonopen = function() {
-		globalThis.websocket.send(JSON.stringify({'mid':globalThis.mid}))
+		globalThis.websocket.send(JSON.stringify({'me_id':globalThis.meId}))
 	  }
 	  globalThis.wsonmessage = function(evt) {
+		  console.log(evt.data)
 		const message = JSON.parse(evt.data)
 		if (Object.prototype.hasOwnProperty.call(message, 'peer_id')) {
-	
+			if (Object.prototype.hasOwnProperty.call(message, 'type')) {
+				if (message.type === 'invite') {
+					if (Object.prototype.hasOwnProperty.call(message, 'psw') && message.psw === globalThis.psw) {
+						if (!!!globalThis.chlWindows[message.peer_id]) {
+							const webrtcClient = WebrtcFactory.newMaster(message.peer_id)
+							webrtcClient.onsdp = 'onsdp'
+							webrtcClient.oncandidate = 'oncandidate'
+							globalThis.chlWindows[message.peer_id] = new Window({url: 'link.htm', parameters: {peerId: message.peer_id,
+								webrtc: webrtcClient}})
+						}
+					}
+				}
+			}
 		} else if (message.code == 0) {
 			statusLbl.innerText = '成功与服务器建立连接'
 			stausIcon.classList.remove('faild')
@@ -264,11 +286,11 @@
 	  const idEditBtn = $('#idEditBtn')
 	  const idTxt = $('#idTxt')
 	  globalThis.setId = function(id) {
-		if (id == globalThis.mid) {
+		if (id == globalThis.meId) {
 			return
 		}
-		globalThis.mid = id
-		idTxt.value = globalThis.mid
+		globalThis.meId = id
+		idTxt.value = globalThis.meId
 		let showId = ''
 		let reverseId = ''
 		for (let i = id.length - 1, spIdx = 1; i >= 0; --i, ++spIdx) {
@@ -282,7 +304,7 @@
 		}
 		idLbl.firstElementChild.innerText = showId.trim()
 		if (globalThis.websocket.readyState == 1) {
-		  globalThis.websocket.send(JSON.stringify({'mid':globalThis.mid}))
+		  globalThis.websocket.send(JSON.stringify({'me_id':globalThis.meId}))
 		}
 	  }
 
@@ -355,33 +377,37 @@
 		  } catch(err) {}
 		  if (conf == null) {
 		    sys.fs.unlink(confFile)
-		  } else if (!Object.prototype.hasOwnProperty.call(conf, 'mid') || !Object.prototype.hasOwnProperty.call(conf, 'psw')) {
+		  } else if (!Object.prototype.hasOwnProperty.call(conf, 'meId') || !Object.prototype.hasOwnProperty.call(conf, 'psw')) {
 		    conf = null
 		    sys.fs.unlink(confFile)
-		  } else if (!reId.test(conf.mid) || !rePsw.test(conf.psw)) {
+		  } else if (!reId.test(conf.meId) || !rePsw.test(conf.psw)) {
 		    conf = null
 		    sys.fs.unlink(confFile)
 		  }
 		}
 		if (conf == null) {
-		  const randomId = uuid()
+		  const randomeId = uuid()
 	      let realId = ''
-		  for (let i = 0; i < randomId.length; i += 3) {
-		    realId += randomId.charAt(i)
+		  for (let i = 0; i < randomeId.length; i += 3) {
+		    realId += randomeId.charAt(i)
 		  }
 	      globalThis.setId(realId)
 
 	      globalThis.setPsw(Math.round(Math.random() * 1e6)+'')
 
-		  sys.fs.sync.open(confFile, 'w').writeSync(encode(JSON.stringify({'mid':globalThis.mid,'psw':globalThis.psw}), 'utf-8'))
+		  sys.fs.sync.open(confFile, 'w').writeSync(encode(JSON.stringify({'meId':globalThis.meId,'psw':globalThis.psw}), 'utf-8'))
 		} else {
-	      globalThis.setId(conf.mid)
+	      globalThis.setId(conf.meId)
 
 	      globalThis.setPsw(conf.psw)
 		}
 	  })
 	  document.on("beforeunload", () => {
-		sys.fs.sync.open(confFile, 'w').writeSync(encode(JSON.stringify({'mid':globalThis.mid,'psw':globalThis.psw}), 'utf-8'))
+		sys.fs.sync.open(confFile, 'w').writeSync(encode(JSON.stringify({'meId':globalThis.meId,'psw':globalThis.psw}), 'utf-8'))
+	  })
+
+	  window.on('childClose', (evt) => {
+		delete globalThis.chlWindows[evt.data.peerId]
 	  })
     </script>
   </body>
