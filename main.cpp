@@ -1,7 +1,3 @@
-
-#include <thread>
-#include <sstream>
-
 #include "sciter-x.h"
 #include "sciter-x-window.hpp"
 
@@ -48,7 +44,7 @@ public:
 			SOM_FUNC(addRemoteCandidate)
 		)
 		SOM_PASSPORT_END
-
+		
 private:
 	sciter::string peer_id_;
 	WRDClient client_;
@@ -92,6 +88,10 @@ public:
 #include "resources.cpp"
 
 int uimain(std::function<int()> run) {
+#ifdef _DEBUG
+	::SciterSetOption(NULL, SCITER_SET_DEBUG_MODE, TRUE);
+	::WinExec("inspector.exe", SW_SHOW);
+#endif
 	::SciterSetGlobalAsset(new WebrtcFactory);
 	::SciterSetOption(NULL, SCITER_SET_SCRIPT_RUNTIME_FEATURES,
 		ALLOW_FILE_IO |
