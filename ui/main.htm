@@ -198,13 +198,13 @@
 	  const statusLbl = $('#statusLbl')
 	  const stausIcon = $('#stausIcon')
 	  
-	  globalThis.chlWindows = {}
+	  globalThis.sessions = {}
 	  globalThis.onsdp = function(peerId, sdpStr) {
 		let sendMsg = {peer_id: peerId, type: 'sdp', sdp: sdpStr}
 		globalThis.websocket.send(JSON.stringify(sendMsg))
 	  }
 	  globalThis.oncandidate = function(peerId, mIdStr, mline_index_I, candidateStr) {
-		let sendMsg = {peer_id: peerId, type: 'candidate', mid: mIdStr, mline_index: mline_index_I, candidate: candidateStr}
+		let sendMsg = {peer_id: peerId, type: 'candidate', mid: mIdStr, mline_index: mline_index_I, sdp: candidateStr}
 		globalThis.websocket.send(JSON.stringify(sendMsg))
 	  }
 	  globalThis.wsonopen = function() {
@@ -217,12 +217,33 @@
 			if (Object.prototype.hasOwnProperty.call(message, 'type')) {
 				if (message.type === 'invite') {
 					if (Object.prototype.hasOwnProperty.call(message, 'psw') && message.psw === globalThis.psw) {
-						if (!!!globalThis.chlWindows[message.peer_id]) {
+						if (!!!globalThis.sessions[message.peer_id]) {
 							const webrtcClient = WebrtcFactory.newMaster(message.peer_id)
 							webrtcClient.onsdp = 'onsdp'
 							webrtcClient.oncandidate = 'oncandidate'
-							globalThis.chlWindows[message.peer_id] = new Window({url: 'link.htm', parameters: {peerId: message.peer_id,
-								webrtc: webrtcClient}})
+							globalThis.sessions[message.peer_id] = {win: new Window({url: 'link.htm', parameters: {peerId: message.peer_id,
+								webrtc: webrtcClient}}), rtc: webrtcClient, candidates: new Array, sdpSet: false}
+						}
+					}
+				} else if (message.type === 'sdp') {
+					if (Object.prototype.hasOwnProperty.call(message, 'sdp')) {
+						if (!!globalThis.sessions[message.peer_id]) {
+							const ses = globalThis.sessions[message.peer_id]
+							ses.rtc.setRemoteSDP(message.sdp)
+							ses.candidates.forEach((item) => {
+								ses.rtc.addRemoteCandidate(item.mid, item.mline_idx, item.sdp)
+							})
+							ses.candidates = new Array
+							ses.sdpSet = true
+						}
+					}
+				} else if (message.type === 'candidate') {
+					if (!!globalThis.sessions[message.peer_id]) {
+						const ses = globalThis.sessions[message.peer_id]
+						if (ses.sdpSet) {
+							ses.rtc.addRemoteCandidate(message.mid, message.mline_idx, message.sdp)
+						} else {
+							ses.candidates.push({mid: message.mid, mline_idx: message.mline_idx, sdp: message.sdp})
 						}
 					}
 				}
@@ -407,7 +428,7 @@
 	  })
 
 	  window.on('childClose', (evt) => {
-		delete globalThis.chlWindows[evt.data.peerId]
+		delete globalThis.sessions[evt.data.peerId]
 	  })
     </script>
   </body>
