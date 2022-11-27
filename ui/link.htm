@@ -89,10 +89,10 @@
 	  const minimizeBtn = $('#minimizeBtn')
 
 	  closeBtn.on('mouseenter', () => {
-          closeBtn.firstElementChild.classList.add("hover")
+		closeBtn.firstElementChild.classList.add("hover")
       })
 	  closeBtn.on('mouseleave', () => {
-          closeBtn.firstElementChild.classList.remove("hover")
+		closeBtn.firstElementChild.classList.remove("hover")
       })
 	  on('click', '#closeBtn', () => {
 		window.close(true)
@@ -103,16 +103,34 @@
       })
 
 	  document.on('ready', () => {
-      globalThis.peerId = window.parameters.peerId
-      globalThis.webrtc = window.parameters.webrtc
-      globalThis.webrtc.genSDP()
+        globalThis.peerId = window.parameters.peerId
+        globalThis.webrtc = window.parameters.webrtc
+        globalThis.webrtc.genSDP()
 	  })
 	  document.on('beforeunload', () => {
 		  window.parent.postEvent(new Event('childClose', {data: {peerId: globalThis.peerId}}))
 	  })
 
-	  window.on('signalMsgReceived', (evt) => {
-		
+	  let closeTimerId = setTimeout(() => {
+		window.close(true)
+	  }, 60000)
+	  let firstHeartBeat = true
+	  window.on('dcMsgReceived', (evt) => {
+		  console.log(evt.data)
+		if (evt.data == 'heart beat!')
+		{
+		  clearTimeout(closeTimerId)
+		  closeTimerId = setTimeout(() => {
+			window.close(true)
+		  }, 60000)
+		  if (firstHeartBeat)
+		  {
+			firstHeartBeat = false
+			setInterval(() => {
+				globalThis.webrtc.send('heart beat!')
+			}, 15000)
+		  }
+		}
 	  })
 	</script>
  </body>

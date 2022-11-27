@@ -199,19 +199,26 @@
 	  const stausIcon = $('#stausIcon')
 	  
 	  globalThis.sessions = {}
-	  globalThis.onsdp = function(peerId, sdpStr) {
-		let sendMsg = {peer_id: peerId, type: 'sdp', sdp: sdpStr}
-		globalThis.websocket.send(JSON.stringify(sendMsg))
-	  }
-	  globalThis.oncandidate = function(peerId, mIdStr, mline_index_I, candidateStr) {
-		let sendMsg = {peer_id: peerId, type: 'candidate', mid: mIdStr, mline_index: mline_index_I, sdp: candidateStr}
-		globalThis.websocket.send(JSON.stringify(sendMsg))
-	  }
+	  window.on('sdp', function(evt) {
+		  console.log(evt.data)
+		globalThis.websocket.send(evt.data)
+	  })
+	  window.on('candidate', function(evt) {
+		  console.log(evt.data)
+		globalThis.websocket.send(evt.data)
+	  })
+	  window.on('remote_string', function(evt) {
+		const msg = JSON.parse(evt.data)
+		if (!!globalThis.sessions[msg.peer_id])
+		{
+		  globalThis.sessions[msg.peer_id].win.postEvent(new Event('dcMsgReceived', {data: msg.data}))
+		}
+	  })
 	  globalThis.wsonopen = function() {
 		globalThis.websocket.send(JSON.stringify({'me_id':globalThis.meId}))
 	  }
 	  globalThis.wsonmessage = function(evt) {
-		  console.log(evt.data)
+		console.log(evt.data)
 		const message = JSON.parse(evt.data)
 		if (Object.prototype.hasOwnProperty.call(message, 'peer_id')) {
 			if (Object.prototype.hasOwnProperty.call(message, 'type')) {
@@ -219,11 +226,12 @@
 					if (Object.prototype.hasOwnProperty.call(message, 'psw') && message.psw === globalThis.psw) {
 						if (!!!globalThis.sessions[message.peer_id]) {
 							const webrtcClient = WebrtcFactory.newMaster(message.peer_id)
-							webrtcClient.onsdp = 'onsdp'
-							webrtcClient.oncandidate = 'oncandidate'
 							globalThis.sessions[message.peer_id] = {win: new Window({url: 'link.htm', parameters: {peerId: message.peer_id,
 								webrtc: webrtcClient}}), rtc: webrtcClient, candidates: new Array, sdpSet: false}
 						}
+					} else {
+						let sendMsg = {peer_id: message.peer_id, type: 'invite_resp', code: -1}
+						globalThis.websocket.send(JSON.stringify(sendMsg))
 					}
 				} else if (message.type === 'sdp') {
 					if (Object.prototype.hasOwnProperty.call(message, 'sdp')) {
@@ -253,9 +261,13 @@
 			stausIcon.classList.remove('faild')
 			stausIcon.classList.add('success')
 		} else {
-			statusLbl.innerText = message.msg
+			statusLbl.innerText = '未能与服务器建立连接'
 			stausIcon.classList.add('faild')
 			stausIcon.classList.remove('success')
+			if (message.code == -1)
+			{
+				statusLbl.innerText = '识别码重复，将在15秒后重试'
+			}
 		}
 	  }
 
@@ -428,7 +440,9 @@
 	  })
 
 	  window.on('childClose', (evt) => {
-		delete globalThis.sessions[evt.data.peerId]
+		  console.log(evt.data.peerId)
+		globalThis.sessions[evt.data.peerId].rtc.close()
+		globalThis.sessions[evt.data.peerId] = null
 	  })
     </script>
   </body>
