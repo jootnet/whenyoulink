@@ -1,3 +1,6 @@
+
+#include <sstream>
+
 #include "sciter-x.h"
 #include "sciter-x-window.hpp"
 
@@ -14,7 +17,9 @@ public:
 		peer_id_ = peer_id;
 	}
 	~Webrtc() {
-		::wrdClientDestroy(&client_);
+		if (nullptr != client_) {
+			::wrdClientDestroy(&client_);
+		}
 	}
 
 	bool genSDP() {
@@ -32,43 +37,76 @@ public:
 		return true;
 	}
 
+	bool sendMessage(sciter::string msg) {
+		::wrdSendString(client_, aux::w2a(msg));
+		return true;
+	}
+
+	bool close() {
+		::wrdClientDestroy(&client_);
+		return true;
+	}
+
 	SOM_PASSPORT_BEGIN(Webrtc)
-		SOM_PROPS(
-			SOM_PROP_EX(onsdp, sdpGenCb_),
-			SOM_PROP_EX(oncandidate, candidateGatheringCb_),
-			SOM_PROP_EX(onmessage, remoteStringReceivedCb_)
-		)
 		SOM_FUNCS(
 			SOM_FUNC(genSDP),
 			SOM_FUNC(setRemoteSDP),
-			SOM_FUNC(addRemoteCandidate)
+			SOM_FUNC(addRemoteCandidate),
+			SOM_FUNC_EX(send, sendMessage),
+			SOM_FUNC(close)
 		)
 		SOM_PASSPORT_END
 		
 private:
 	sciter::string peer_id_;
 	WRDClient client_;
-	std::string sdpGenCb_;
-	std::string candidateGatheringCb_;
-	std::string remoteStringReceivedCb_;
 private:
 	static void OnSDPGen(const WRDClient client, const char* sdp, void* usr_param) {
 		auto webrtc = reinterpret_cast<Webrtc*>(usr_param);
-		if (!webrtc->sdpGenCb_.empty()) {
-			pwin->call_function(webrtc->sdpGenCb_.c_str(), webrtc->peer_id_, sdp);
+		std::stringstream ss;
+		ss << "{\"type\":\"sdp\", \"peer_id\":\"" << aux::w2a(webrtc->peer_id_);
+		ss << "\",\"sdp\":\"";
+		// ЧЄТе
+		for (auto i = 0; i < 99999999; ++i) {
+			char c = sdp[i];
+			if (c == '\0') break;
+			if (c == '\r') {
+				ss << "\\r";
+			}
+			else if (c == '\n') {
+				ss << "\\n";
+			}
+			else ss << c;
 		}
+		ss << "\"}";
+		BEHAVIOR_EVENT_PARAMS evt = { 0 };
+		evt.name = WSTR("sdp");
+		evt.data = ss.str();
+		pwin->broadcast_event(evt);
 	}
 	static void OnCandidateGathering(const WRDClient client, const char* mid, int mline_index, const char* candidate, void* usr_param) {
 		auto webrtc = reinterpret_cast<Webrtc*>(usr_param);
-		if (!webrtc->candidateGatheringCb_.empty()) {
-			pwin->call_function(webrtc->candidateGatheringCb_.c_str(), webrtc->peer_id_, mid, mline_index, candidate);
-		}
+		std::stringstream ss;
+		ss << "{\"type\":\"candidate\", \"peer_id\":\"" << aux::w2a(webrtc->peer_id_);
+		ss << "\",\"mid\":\"" << mid;
+		ss << "\", \"mline_index\":" << std::ios::dec << mline_index;
+		ss << ",\"sdp\":\"" << candidate;
+		ss << "\"}";
+		BEHAVIOR_EVENT_PARAMS evt = {0};
+		evt.name = WSTR("candidate");
+		evt.data = ss.str();
+		pwin->broadcast_event(evt);
 	}
 	static void OnRemoteStringReceive(const WRDClient client, const char* data, void* usr_param) {
 		auto webrtc = reinterpret_cast<Webrtc*>(usr_param);
-		if (!webrtc->remoteStringReceivedCb_.empty()) {
-			pwin->call_function(webrtc->remoteStringReceivedCb_.c_str(), webrtc->peer_id_, data);
-		}
+		std::stringstream ss;
+		ss << "{\"type\":\"remote_string\", \"peer_id\":\"" << aux::w2a(webrtc->peer_id_);
+		ss << "\",\"data\":\"" << data;
+		ss << "\"}";
+		BEHAVIOR_EVENT_PARAMS evt = { 0 };
+		evt.name = WSTR("remote_string");
+		evt.data = ss.str();
+		pwin->broadcast_event(evt);
 	}
 };
 
