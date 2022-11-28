@@ -254,6 +254,11 @@
 							ses.candidates.push({mid: message.mid, mline_idx: message.mline_idx, sdp: message.sdp})
 						}
 					}
+				} else if (message.type === 'close') {
+					if (!!globalThis.sessions[message.peer_id]) {
+						const ses = globalThis.sessions[message.peer_id]
+						ses.win.close(true)
+					}
 				}
 			}
 		} else if (message.code == 0) {
@@ -271,7 +276,8 @@
 		}
 	  }
 
-	  globalThis.websocket = new WebSocket('ws://8.130.41.127/wrd/room')
+	  const svrHost = 'ws://8.130.41.127/wrd'
+	  globalThis.websocket = new WebSocket(svrHost + '/room')
 	  globalThis.websocket.onopen = globalThis.wsonopen
 	  globalThis.websocket.onmessage = globalThis.wsonmessage
 
@@ -279,7 +285,7 @@
 		// 每15s检测一次websocket连接
 		if (globalThis.websocket.readyState != 1) {
 			globalThis.websocket.close()
-			globalThis.websocket = new WebSocket('ws://8.130.41.127/wrd/room')
+			globalThis.websocket = new WebSocket(svrHost + '/room')
 			globalThis.websocket.onopen = globalThis.wsonopen
 			globalThis.websocket.onmessage = globalThis.wsonmessage
 		}
@@ -440,9 +446,14 @@
 	  })
 
 	  window.on('childClose', (evt) => {
-		  console.log(evt.data.peerId)
+		//console.log(evt.data.peerId)
+		if (!!!globalThis.sessions[evt.data.peerId])
+		{
+			return
+		}
 		globalThis.sessions[evt.data.peerId].rtc.close()
 		globalThis.sessions[evt.data.peerId] = null
+		globalThis.websocket.send('{"type":"close","peer_id":"'+evt.data.peerId+'"}')
 	  })
     </script>
   </body>
