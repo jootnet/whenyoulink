@@ -1,11 +1,16 @@
 #include "Upgrader.h"
 
+#define _CRT_SECURE_NO_WARNINGS
+#define _CRT_NON_CONFORMING_SWPRINTFS
+
 #include <string>
 #include <thread>
 #include <Windows.h>
 #include <libloaderapi.h>
 #include <Wincrypt.h>
 #include <WinHttp.h>
+#include <Psapi.h>
+#include <tlhelp32.h >
 
 #include "aux-cvt.h"
 
@@ -16,10 +21,12 @@
 static DWORD CalcMD5(LPCWSTR filename, LPBYTE rgbHash);
 static char* base64_encode(const unsigned char* binData, int binLength, char* base64);
 static std::wstring GetRemoteFileMD5(const wchar_t* host, const wchar_t* uri);
+static void GetProcessPathByPId(TCHAR* cstrPath);
 
 bool HasNewVersion(const wchar_t* remote_host, const wchar_t* remote_uri) {
-    wchar_t sfxPath[MAX_PATH];
-    ::GetModuleFileName(nullptr, sfxPath, MAX_PATH);
+    wchar_t sfxPath[MAX_PATH] = {};
+    GetProcessPathByPId(sfxPath);
+    if (sfxPath[0] == '\0') return false;
     BYTE hash[MD5LEN];
     if (CalcMD5(sfxPath, hash) != 0) return false;
     char md5B64[MD5LEN * 2];
@@ -284,4 +291,102 @@ Exit:
     }
 
     return headerBuffer;
+}
+
+void GetProcessPathByPId(TCHAR* cstrPath)
+{
+    //低权限进程获取父进程路径，使用dostontpath 转换
+    HANDLE hProcess = NULL;
+    HANDLE hProcessSnap = ::CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    if (hProcessSnap == INVALID_HANDLE_VALUE)
+        return;
+
+    //find parent process id
+    PROCESSENTRY32 pe32 = { 0 };
+    pe32.dwSize = sizeof(pe32);
+    BOOL bContinue = ::Process32First(hProcessSnap, &pe32);
+    DWORD dwParentProcessId = 0;
+    DWORD dwProcessId = GetCurrentProcessId();
+    while (bContinue)
+    {
+        if (pe32.th32ProcessID == dwProcessId)
+        {
+            dwParentProcessId = pe32.th32ParentProcessID;
+            break;
+        }
+
+        bContinue = ::Process32Next(hProcessSnap, &pe32);
+    }
+    ::CloseHandle(hProcessSnap);
+
+    hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, dwParentProcessId);
+    if (NULL == hProcess)
+    {
+        return;
+    }
+
+    TCHAR szPath[MAX_PATH + 1] = { 0 };
+    DWORD cbNeeded = MAX_PATH;
+
+    DWORD dwCount = GetProcessImageFileName(hProcess, szPath, cbNeeded);
+    if (0 == dwCount)
+    {
+        return;
+    }
+
+    // 获取Logic Drive String长度
+    UINT uiLen = GetLogicalDriveStrings(0, NULL);
+    if (0 == uiLen)
+    {
+        return;
+    }
+
+    PTSTR pLogicDriveString = new TCHAR[uiLen + 1];
+    ZeroMemory(pLogicDriveString, uiLen + 1);
+    uiLen = GetLogicalDriveStrings(uiLen, pLogicDriveString);
+    if (0 == uiLen)
+    {
+        delete[]pLogicDriveString;
+        return;
+    }
+
+    TCHAR szDrive[3] = TEXT(" :");
+    PTSTR pDosDriveName = new TCHAR[MAX_PATH];
+    PTSTR pLogicIndex = pLogicDriveString;
+
+    do
+    {
+        szDrive[0] = *pLogicIndex;
+        uiLen = QueryDosDevice(szDrive, pDosDriveName, MAX_PATH);
+        if (0 == uiLen)
+        {
+            if (ERROR_INSUFFICIENT_BUFFER != GetLastError())
+            {
+                break;
+            }
+
+            delete[]pDosDriveName;
+            pDosDriveName = new TCHAR[uiLen + 1];
+            uiLen = QueryDosDevice(szDrive, pDosDriveName, uiLen + 1);
+            if (0 == uiLen)
+            {
+                break;
+            }
+        }
+
+        uiLen = wcslen(pDosDriveName);
+        if (0 == _wcsnicmp(szPath, pDosDriveName, uiLen))
+        {
+            //sFilePath.Format(TEXT("%s%s"), szDrive, szPath + uiLen);
+            swprintf(cstrPath, TEXT("%s%s"), szDrive, szPath + uiLen);
+            break;
+        }
+
+        while (*pLogicIndex++);
+    } while (*pLogicIndex);
+
+    delete[]pLogicDriveString;
+    delete[]pDosDriveName;
+
+    return;
 }
