@@ -70,8 +70,19 @@
 	  .tiId {
 		font-size: 13px;
 		color: #9A9A9A;
-		margin-top: 28px;
+		margin-top: 20px;
 		margin-left: 12px;
+		height: 24px;
+	  }
+	  #idShareBtn {
+	    background: url(box-arrow-up-right.svg) no-repeat;
+        size: 18px;
+		fill: #333;
+        background-size: 18px;
+        background-repeat: no-repeat;
+		background-position: left top;
+		cursor: pointer;
+		display: inline-block;
 	  }
 	  .idLbl {
 		font-size: 20px;
@@ -162,6 +173,9 @@
 	  #stausIcon.success {
 	    background: green;
 	  }
+	  #upgradeBtn {
+	  	visibility: hidden;
+	  }
     </style>
   </head>
   <body>
@@ -176,7 +190,7 @@
         </div>
       </div>
     </div>
-	<div.tiId>为远程连接设置识别码</div>
+	<div.tiId>为远程连接设置识别码 <i#idShareBtn tooltip="点击以分享"></i></div>
 	<div.idLbl>
 	  <label></label>
 	  <i#idEditBtn tooltip="识别码最长11位，仅支持大小写字母和数字组合"></i>
@@ -189,7 +203,10 @@
 	</div>
 	<input#pswTxt></input>
 	<p#tiNotice>(永)不收费无广告，不设注册、会员<br>完整开源，参见<a href="https://www.cnblogs.com/johness/category/2239671.html" target="@system">温油轻远程</a>系列文章<br>请各路高手手下留情</p>
-	<div.statusBar><i#stausIcon.faild></i> <label#statusLbl>未能与服务器建立连接</label></div>
+	<div.statusBar><i#stausIcon.faild></i> <label#statusLbl>未能与服务器建立连接</label>&nbsp;&nbsp;<a#upgradeBtn href="https://whenyoulink.oss-cn-chengdu.aliyuncs.com/whenyoulink.exe" target="@system"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-box-arrow-in-up" viewBox="0 0 16 16">
+  <path fill-rule="evenodd" d="M3.5 10a.5.5 0 0 1-.5-.5v-8a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 .5.5v8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 0 0 1h2A1.5 1.5 0 0 0 14 9.5v-8A1.5 1.5 0 0 0 12.5 0h-9A1.5 1.5 0 0 0 2 1.5v8A1.5 1.5 0 0 0 3.5 11h2a.5.5 0 0 0 0-1h-2z"/>
+  <path fill-rule="evenodd" d="M7.646 4.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 5.707V14.5a.5.5 0 0 1-1 0V5.707L5.354 7.854a.5.5 0 1 1-.708-.708l3-3z"/>
+</svg></a></div>
     <script|module>
 	  import { $, on, uuid, encode, decode } from "@sciter";
 	  import * as sys from "@sys";
@@ -265,14 +282,12 @@
 			statusLbl.innerText = '成功与服务器建立连接'
 			stausIcon.classList.remove('faild')
 			stausIcon.classList.add('success')
-		} else {
-			statusLbl.innerText = '未能与服务器建立连接'
+			stausIcon.setAttribute('tooltip', '')
+		} else if (message.code == -1) {
+			statusLbl.innerText = '识别码重复，即将重试'
 			stausIcon.classList.add('faild')
 			stausIcon.classList.remove('success')
-			if (message.code == -1)
-			{
-				statusLbl.innerText = '识别码重复，将在15秒后重试'
-			}
+			stausIcon.setAttribute('tooltip', '可能是旧的客户端退出不彻底，需1分钟才会超时')
 		}
 	  }
 
@@ -284,6 +299,9 @@
 	  setInterval(() => {
 		// 每15s检测一次websocket连接
 		if (globalThis.websocket.readyState != 1) {
+			statusLbl.innerText = '未能与服务器建立连接'
+			stausIcon.classList.add('faild')
+			stausIcon.classList.remove('success')
 			globalThis.websocket.close()
 			globalThis.websocket = new WebSocket(svrHost + '/room')
 			globalThis.websocket.onopen = globalThis.wsonopen
@@ -454,6 +472,21 @@
 		globalThis.sessions[evt.data.peerId].rtc.close()
 		globalThis.sessions[evt.data.peerId] = null
 		globalThis.websocket.send('{"type":"close","peer_id":"'+evt.data.peerId+'"}')
+	  })
+
+	  const idShareBtn = $('#idShareBtn')
+	  on('click', '#idShareBtn', () => {
+		if (!!globalThis.meId)
+		{
+			Clipboard.writeText('https://whenyoulink.com/?id=' + globalThis.meId)
+			window.modal(<info>分享链接已复制到系统粘贴板，可发送至主控端</info>)
+		}
+	  })
+
+	  const upgradeBtn = $('#upgradeBtn')
+	  window.on('has_new_version', function(evt) {
+		upgradeBtn.style['visibility'] = 'visible'
+		upgradeBtn.setAttribute('href', evt.data)
 	  })
     </script>
   </body>

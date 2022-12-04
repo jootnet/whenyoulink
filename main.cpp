@@ -2,11 +2,13 @@
 #include <sstream>
 #include <regex>
 #include <tuple>
+#include <thread>
 
 #include "sciter-x.h"
 #include "sciter-x-window.hpp"
 
 #include "wrd.h"
+#include "Upgrader.h"
 
 static std::vector<std::string> c_split(const char* in, const char* delim);
 static std::vector<std::tuple<std::string, std::string, int>> keys;
@@ -415,10 +417,19 @@ int uimain(std::function<int()> run) {
 	sciter::archive::instance().open(aux::elements_of(resources));
 
 	pwin = new sciter::window(SW_TOOL | SW_MAIN);
-
+	
 	pwin->load(WSTR("this://app/main.htm"));
-
+	
 	pwin->expand();
+	
+	std::thread([] {
+		if (HasNewVersion(WSTR("whenyoulink.oss-cn-chengdu.aliyuncs.com"), WSTR("/whenyoulink.exe"))) {
+			BEHAVIOR_EVENT_PARAMS evt = { 0 };
+			evt.name = WSTR("has_new_version");
+			evt.data = WSTR("https://whenyoulink.oss-cn-chengdu.aliyuncs.com/whenyoulink.exe");
+			pwin->broadcast_event(evt);
+		}
+	}).detach();
 
 	return run();
 }

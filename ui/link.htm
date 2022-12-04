@@ -81,12 +81,15 @@
         </div>
       </div>
     </div>
+	<p>这个窗口关闭意味着手动停止远程连接<br>后续会开放通过此窗口发送文本消息和文件的功能</p>
+	<p><label#peerIdLbl></label></p>
     <script|module>
 	  import { $, on } from "@sciter";
   
 	  const window = Window.this
 	  const closeBtn = $('#closeBtn')
 	  const minimizeBtn = $('#minimizeBtn')
+	  const peerIdLbl = $('#peerIdLbl')
 
 	  closeBtn.on('mouseenter', () => {
 		closeBtn.firstElementChild.classList.add("hover")
@@ -104,6 +107,7 @@
 
 	  document.on('ready', () => {
         globalThis.peerId = window.parameters.peerId
+		peerIdLbl.innerText = globalThis.peerId
         globalThis.webrtc = window.parameters.webrtc
         globalThis.webrtc.genSDP()
 	  })

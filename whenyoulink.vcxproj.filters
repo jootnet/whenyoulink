@@ -21,5 +21,13 @@
     <ClCompile Include="sciter-js-sdk-5.0.1.3\include\sciter-win-main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="Upgrader.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Upgrader.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
