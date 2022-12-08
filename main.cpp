@@ -9,6 +9,7 @@
 
 #include "sciter-x.h"
 #include "sciter-x-window.hpp"
+#include "sciter-x-threads.h"
 
 #include "wrd_def.h"
 #include "Upgrader.h"
@@ -302,10 +303,14 @@ public:
 		SOM_PASSPORT_END
 };
 
+int _ = []() {
+	ExtractDlls();
+	return 0;
+}();
+
 #include "resources.cpp"
 
 int uimain(std::function<int()> run) {
-	ExtractDlls();
 	HMODULE libWrdPtr = LoadLibrary(TEXT("wrd"));
 	wrdCreateMaster = (wrdCreateMasterFunc) GetProcAddress(libWrdPtr, "wrdCreateMaster");
 	wrdOnCandidateGathering = (wrdOnCandidateGatheringFunc)GetProcAddress(libWrdPtr, "wrdOnCandidateGathering");
@@ -553,8 +558,8 @@ void ExtractDlls() {
 		WCHAR dll7z[MAX_PATH] = { 0 };
 		wcscat(dll7z, path);
 		wcscat(dll7z, TEXT("dll.7z"));
-		ExtractResource(sciter::application::hinstance(), IDR_EXE_7ZDEC, exe7zdec);
-		ExtractResource(sciter::application::hinstance(), IDR_ZIP_DLL7Z, dll7z);
+		ExtractResource(THIS_HINSTANCE, IDR_EXE_7ZDEC, exe7zdec);
+		ExtractResource(THIS_HINSTANCE, IDR_ZIP_DLL7Z, dll7z);
 	}
 
 	SetCurrentDirectory(path);
@@ -566,15 +571,15 @@ void ExtractDlls() {
 		memset(&ei, 0, sizeof(ei));
 		ei.cbSize = sizeof(ei);
 		ei.lpFile = TEXT("7zdec.exe");
+		ei.lpDirectory = path;
 		ei.fMask = SEE_MASK_NOCLOSEPROCESS
-#ifndef UNDER_CE
 			| SEE_MASK_FLAG_DDEWAIT
-#endif
 			 | SEE_MASK_NO_CONSOLE 
 			;
 		ei.lpParameters = TEXT("e dll.7z");
-		ei.nShow =  SW_HIDE; 
+		ei.nShow =  SW_HIDE;
 		ShellExecuteEx(&ei);
+		WaitForSingleObject(ei.hProcess, INFINITE);
 		//executeRes = (UINT32)(UINT_PTR)ei.hInstApp;
 	}
 }
