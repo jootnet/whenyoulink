@@ -1,19 +1,32 @@
+#define _CRT_SECURE_NO_WARNINGS
 
 #include <sstream>
 #include <regex>
 #include <tuple>
 #include <thread>
+#include <Windows.h>
+#include <shellapi.h>
 
 #include "sciter-x.h"
 #include "sciter-x-window.hpp"
 
-#include "wrd.h"
+#include "wrd_def.h"
 #include "Upgrader.h"
+#include "resource.h"
 
 static std::vector<std::string> c_split(const char* in, const char* delim);
 static std::vector<std::tuple<std::string, std::string, int>> keys;
+static void ExtractDlls();
 
 static sciter::om::hasset<sciter::window> pwin;
+static wrdCreateMasterFunc wrdCreateMaster;
+static wrdOnCandidateGatheringFunc wrdOnCandidateGathering;
+static wrdOnRemoteStringReceivedFunc wrdOnRemoteStringReceived;
+static wrdClientDestroyFunc wrdClientDestroy;
+static wrdGenSDPFunc wrdGenSDP;
+static wrdSetRemoteSDPFunc wrdSetRemoteSDP;
+static wrdAddRemoteCandidateFunc wrdAddRemoteCandidate;
+static wrdSendStringFunc wrdSendString;
 
 class Webrtc : public sciter::om::asset<Webrtc> {
 public:
@@ -292,6 +305,16 @@ public:
 #include "resources.cpp"
 
 int uimain(std::function<int()> run) {
+	ExtractDlls();
+	HMODULE libWrdPtr = LoadLibrary(TEXT("wrd"));
+	wrdCreateMaster = (wrdCreateMasterFunc) GetProcAddress(libWrdPtr, "wrdCreateMaster");
+	wrdOnCandidateGathering = (wrdOnCandidateGatheringFunc)GetProcAddress(libWrdPtr, "wrdOnCandidateGathering");
+	wrdOnRemoteStringReceived = (wrdOnRemoteStringReceivedFunc)GetProcAddress(libWrdPtr, "wrdOnRemoteStringReceived");
+	wrdClientDestroy = (wrdClientDestroyFunc)GetProcAddress(libWrdPtr, "wrdClientDestroy");
+	wrdGenSDP = (wrdGenSDPFunc)GetProcAddress(libWrdPtr, "wrdGenSDP");
+	wrdSetRemoteSDP = (wrdSetRemoteSDPFunc)GetProcAddress(libWrdPtr, "wrdSetRemoteSDP");
+	wrdAddRemoteCandidate = (wrdAddRemoteCandidateFunc)GetProcAddress(libWrdPtr, "wrdAddRemoteCandidate");
+	wrdSendString = (wrdSendStringFunc)GetProcAddress(libWrdPtr, "wrdSendString");
 	//https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
 	keys.push_back(std::tuple<std::string, std::string, int>("Escape", "Escape", VK_ESCAPE));
 	keys.push_back(std::tuple<std::string, std::string, int>("F1", "F1", VK_F1));
@@ -440,4 +463,118 @@ std::vector<std::string> c_split(const char* in, const char* delim) {
 		std::cregex_token_iterator(in, in + std::strlen(in), re, -1),
 			std::cregex_token_iterator()
 	};
+}
+
+BOOL DoesFileOrDirExist(const WCHAR* path)
+{
+	WIN32_FIND_DATAW fd;
+	HANDLE handle;
+	handle = FindFirstFileW(path, &fd);
+	if (handle == INVALID_HANDLE_VALUE)
+		return FALSE;
+	FindClose(handle);
+	return TRUE;
+}
+
+void ExtractResource(const HINSTANCE hInstance, WORD resourceID, LPCTSTR szFilename)
+{
+	// Find and load the resource
+	HRSRC hResource = FindResource(hInstance, MAKEINTRESOURCE(resourceID), TEXT("BINARY"));
+	HGLOBAL hFileResource = LoadResource(hInstance, hResource);
+
+	// Open and map this to a disk file
+	LPVOID lpFile = LockResource(hFileResource);
+	DWORD dwSize = SizeofResource(hInstance, hResource);
+
+	// Open the file and filemap
+	HANDLE hFile = CreateFile(szFilename, GENERIC_READ | GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	HANDLE hFileMap = CreateFileMapping(hFile, NULL, PAGE_READWRITE, 0, dwSize, NULL);
+	LPVOID lpAddress = MapViewOfFile(hFileMap, FILE_MAP_WRITE, 0, 0, 0);
+
+	// Write the file
+	CopyMemory(lpAddress, lpFile, dwSize);
+
+	// Un-map the file and close the handles
+	UnmapViewOfFile(lpAddress);
+	CloseHandle(hFileMap);
+	CloseHandle(hFile);
+}
+
+void ExtractDlls() {
+	WCHAR path[MAX_PATH * 3 + 2];
+	size_t pathLen;
+	DWORD winRes;
+
+	{
+		unsigned i;
+		DWORD d;
+		winRes = GetTempPathW(MAX_PATH, path);
+		if (winRes == 0 || winRes > MAX_PATH)
+			return;
+		pathLen = wcslen(path);
+		d = (GetTickCount() << 12) ^ (GetCurrentThreadId() << 14) ^ GetCurrentProcessId();
+
+		for (i = 0;; i++, d += GetTickCount())
+		{
+			if (i >= 100)
+			{
+				return;
+			}
+			wcscpy(path + pathLen, L"7z");
+
+			{
+				wchar_t* s = path + wcslen(path);
+				uint32_t value = d;
+				unsigned k;
+				for (k = 0; k < 8; k++)
+				{
+					unsigned t = value & 0xF;
+					value >>= 4;
+					s[7 - k] = (wchar_t)((t < 10) ? ('0' + t) : ('A' + (t - 10)));
+				}
+				s[k] = '\0';
+			}
+
+			if (DoesFileOrDirExist(path))
+				continue;
+			if (CreateDirectoryW(path, NULL))
+			{
+				wcscat(path, TEXT("\\"));
+				pathLen = wcslen(path);
+				break;
+			}
+		}
+	}
+
+	{
+		WCHAR exe7zdec[MAX_PATH] = { 0 };
+		wcscat(exe7zdec, path);
+		wcscat(exe7zdec, TEXT("7zdec.exe"));
+		WCHAR dll7z[MAX_PATH] = { 0 };
+		wcscat(dll7z, path);
+		wcscat(dll7z, TEXT("dll.7z"));
+		ExtractResource(sciter::application::hinstance(), IDR_EXE_7ZDEC, exe7zdec);
+		ExtractResource(sciter::application::hinstance(), IDR_ZIP_DLL7Z, dll7z);
+	}
+
+	SetCurrentDirectory(path);
+
+	{
+		SHELLEXECUTEINFO ei;
+		//UINT32 executeRes;
+
+		memset(&ei, 0, sizeof(ei));
+		ei.cbSize = sizeof(ei);
+		ei.lpFile = TEXT("7zdec.exe");
+		ei.fMask = SEE_MASK_NOCLOSEPROCESS
+#ifndef UNDER_CE
+			| SEE_MASK_FLAG_DDEWAIT
+#endif
+			 | SEE_MASK_NO_CONSOLE 
+			;
+		ei.lpParameters = TEXT("e dll.7z");
+		ei.nShow =  SW_HIDE; 
+		ShellExecuteEx(&ei);
+		//executeRes = (UINT32)(UINT_PTR)ei.hInstApp;
+	}
 }

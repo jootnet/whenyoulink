@@ -25,7 +25,8 @@ static void GetProcessPathByPId(TCHAR* cstrPath);
 
 bool HasNewVersion(const wchar_t* remote_host, const wchar_t* remote_uri) {
     wchar_t sfxPath[MAX_PATH] = {};
-    GetProcessPathByPId(sfxPath);
+    //GetProcessPathByPId(sfxPath);
+    ::GetModuleFileName(NULL, sfxPath, MAX_PATH);
     if (sfxPath[0] == '\0') return false;
     BYTE hash[MD5LEN];
     if (CalcMD5(sfxPath, hash) != 0) return false;
